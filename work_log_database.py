@@ -43,36 +43,24 @@ def save_entry(task):
         utils.clean_scr()
         input("Task saved. Press enter to return to the menu")
         utils.clean_scr()
-        # with open('log.csv', 'a') as csvfile:
-        #     fieldnames = vars(task).keys()
-        #     task_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        #
-        #     # only if file is empty write headers
-        #     if os.stat("log.csv").st_size == 0:
-        #         task_writer.writeheader()
-        #
-        #     task_writer.writerow(vars(task))
-        #     utils.clean_scr()
-        #     input("Task added. Press enter to return to the menu")
-        #     utils.clean_scr()
     else:
         print("Couldn't save. Data is corrupted.")
 
 
 # SEARCHING FUNCTIONALITY
-def print_tasks(tasks_list):
+def print_tasks(tasks):
     """Displays result tasks by exact date"""
-    if len(tasks_list) == 0:
+    if not tasks:
         input("No tasks found. Press enter to return")
         utils.clean_scr()
     else:
-        for task in tasks_list:
-            print("Date: " + task['date'])
-            print("Title: " + task['title'])
-            print("Time Spent: " + task['time_spent'])
-            print("Notes : " + task['notes'])
-            if len(tasks_list) > 1:
-                print("-" * 40)
+        for task in tasks:
+            print("Date: " + task.date)
+            print("Title: " + task.title)
+            print("Time Spent: {0.time_spent}".format(task))
+            if task.notes:
+                print("Notes : " + task.notes)
+            print("-" * 40)
         input("\n" + "Press enter to return to search menu")
         utils.clean_scr()
 
@@ -91,33 +79,9 @@ def get_by_time():
     print_tasks(tasks)
 
 
-def get_by_range():
-    """Retrieve result tasks by date range"""
-    range_dict = utils.enter_searching_date_range()
-
-    # create both datetime obj out of dict
-    dt_start = datetime.datetime.strptime(range_dict['dt_start'], '%d/%m/%Y')
-    dt_end = datetime.datetime.strptime(range_dict['dt_end'], '%d/%m/%Y')
-
-    # let's make a validation for that range
-    if dt_start > dt_end:
-        # Do all again, range is wrong
-        print("Starting date {starting} is greater than ending date {ending}".format(starting=dt_start, ending=dt_end))
-        get_by_range()
-    else:
-        tasks = utils.find_tasks_by_date_range(dt_start, dt_end)
-        print_tasks(tasks)
-
-
 def get_by_string():
     str_w = input("Enter word or part of if: ")
     tasks = utils.find_tasks_by_word(str_w)
-    print_tasks(tasks)
-
-
-def get_by_regex():
-    regex = input("Enter your regular expression: ")
-    tasks = utils.find_tasks_by_pattern(regex)
     print_tasks(tasks)
 
 
@@ -131,7 +95,7 @@ def search_tasks():
     while loop_search:
         print("Do you want to search by:" + "\n")
         search_option = input(utils.print_options(utils.SEARCHING_CRITERIA_ORDER, utils.SEARCHING_CRITERIA))
-        if search_option == 'f':
+        if search_option == 'e':
             utils.clean_scr()
             loop_search = False
         elif search_option == 'a':
@@ -139,7 +103,7 @@ def search_tasks():
             get_by_exact_date()
         elif search_option == 'b':
             utils.clean_scr()
-            get_by_range()
+            get_by_time()
         elif search_option == 'c':
             utils.clean_scr()
             get_by_string()
@@ -148,7 +112,6 @@ def search_tasks():
             get_by_time()
         elif search_option == 'e':
             utils.clean_scr()
-            get_by_regex()
         else:
             utils.clean_scr()
             print('Please select a letter option.')
@@ -176,8 +139,8 @@ def execute():
 
 def initialize():
     db = SqliteDatabase('logs.db')
-    db.connect()
-    db.create_tables([Task], safe=True)
+    with db.connection_context():
+        db.create_tables([Task], safe=True)
 
 
 if __name__ == "__main__":

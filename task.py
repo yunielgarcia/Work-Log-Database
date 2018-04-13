@@ -6,7 +6,7 @@ db = SqliteDatabase('logs.db')
 class Task(Model):
     date = CharField(max_length=255)  # will have DD/MM/YYYY format
     title = CharField(max_length=255)
-    time_spent = IntegerField
+    time_spent = IntegerField()
     notes = TextField(null=True)
     employee_name = CharField(max_length=255)
 

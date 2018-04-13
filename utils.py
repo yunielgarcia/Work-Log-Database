@@ -2,23 +2,27 @@ import os
 import re
 import datetime
 import csv
+from peewee import *
 
-OPTIONS_ORDER = ['a', 'b', 'c']
+from task import Task
+
+OPTIONS_ORDER = ['a)', 'b)', 'c)']
 OPTIONS_TEXT = [
-    ') Add new entry',
-    ') Search in existing entries',
-    ') Quit program'
+    ' Add new entry',
+    ' Search in existing entries',
+    ' Quit program'
 ]
 
-SEARCHING_CRITERIA_ORDER = ['a', 'b', 'c', 'd', 'e', 'f']
+SEARCHING_CRITERIA_ORDER = ['a)', 'b)', 'c)', 'd)', 'e)']
 SEARCHING_CRITERIA = [
-    ') Exact Date',
-    ') Range of Dates',
-    ') Exact Search',
-    ') Time Spent',
-    ') Regex Pattern',
-    ') Return to Menu',
+    ' Exact Date',
+    ' Time Spent',
+    ' Employee\'s Name',
+    ' Exact Search',
+    ' Return to Menu',
 ]
+
+db = SqliteDatabase('logs.db')
 
 
 def clean_scr():
@@ -33,7 +37,7 @@ def print_options(order_list, option_list):
     """
     menu = ''
     for order, text in zip(order_list, option_list):
-        menu += (order + text + '\n')
+        menu += (str(order) + ' - ' + text + '\n')
     return menu
 
 
@@ -131,42 +135,6 @@ def enter_time_spent():
 # SEARCHING FUNCTIONALITY
 
 
-def enter_searching_date_range():
-    """
-    Receives and validate input data for date range
-    :return: dt_start, dt_end (Datetime Obj)
-    """
-    valid_data = False
-    valid_second = False
-    # used to keep track of the values and change them in other scopes
-    input_data = {'dt_start': '', 'dt_end': ''}
-
-    while not valid_data:
-        input_data['dt_start'] = input("Enter the starting date" + "\n" + "Please use DD/MM/YYYY format: ")
-        if re.match('\d{2}/\d{2}/\d{4}', input_data['dt_start']):
-            try:
-                datetime.datetime.strptime(input_data['dt_start'], '%d/%m/%Y')
-            except ValueError:
-                clean_scr()
-                input("Enter a valid date. Press enter to try again.")
-            else:
-                # If no error with first date, let's get the second date
-                while not valid_second:
-                    input_data['dt_end'] = input("Enter the ending date" + "\n" + "Please use DD/MM/YYYY format: ")
-                    if re.match('\d{2}/\d{2}/\d{4}', input_data['dt_end']):
-                        try:
-                            datetime.datetime.strptime(input_data['dt_end'], '%d/%m/%Y')
-                        except ValueError:
-                            clean_scr()
-                            input("Enter a valid ending date. Press enter to try again.")
-                        else:
-                            # out of the two whiles
-                            valid_second = True
-                            valid_data = True
-                            clean_scr()
-    return input_data
-
-
 def enter_searching_date():
     """
     Receives and validate input data
@@ -176,9 +144,18 @@ def enter_searching_date():
     # used to keep track of the values and change them in other scopes
     input_data = {'date': ''}
 
+    tasks_entries = Task.select()
+    date_set = set()  # this way we guarantee no repeated elements.
+    for task in tasks_entries:
+        date_set.add(task.date)
+    set_length = len(date_set)
+
     while not valid_data:
-        input_data['date'] = input("Enter the date" + "\n" + "Please use DD/MM/YYYY format: ")
-        if re.match('\d{2}/\d{2}/\d{4}', input_data['date']):
+        print("Select the date" + "\n")
+        order_list = list(range(1, (set_length + 1)))
+        option_list = list(date_set)
+        date_option_selected = input(print_options(order_list, option_list))
+        if re.match('\d+', date_option_selected) and int(date_option_selected) < (set_length + 1):
             try:
                 datetime.datetime.strptime(input_data['date'], '%d/%m/%Y')
             except ValueError:
@@ -215,61 +192,20 @@ def enter_searching_time():
 
 def find_tasks_by_field(field, field_value):
     """
-    Opens and reads csv file and collect matching task according to search param
+    Opens and reads database and collect matching task according to search param
     :param field: key to search for
     :param field_value: value to compare that field
     :return: list of task with matching criteria
     """
-    tasks = []
-    try:
-        open('log.csv', 'r')
-    except IOError:
-        print("Couldn't open the file.")
-    else:
-        with open('log.csv', newline='') as csvfile:
-            task_reader = csv.DictReader(csvfile, delimiter=',')
-            rows = list(task_reader)
-            for row in rows:
-                if row[field] == field_value:
-                    tasks.append(row)
-            return tasks
-
-
-def find_tasks_by_date_range(dt_start, dt_end):
-    """
-    Opens and reads csv file and collect matching task according to search param
-    :param dt_start: datetime object
-    :param  dt_end: datetime object
-    :return: list of task with match dates
-    """
-    tasks = []
-    try:
-        open('log.csv', 'r')
-    except IOError:
-        print("Couldn't open the file.")
-    else:
-        with open('log.csv', newline='') as csvfile:
-            task_reader = csv.DictReader(csvfile, delimiter=',')
-            rows = list(task_reader)
-
-            # Work around to keep track of a value.
-            # Scope behavior won't let change immutable var
-            # That's why the use of list here
-            current = []
-            for row in rows:
-                try:
-                    datetime.datetime.strptime(row['date'], '%d/%m/%Y')
-                except ValueError:
-                    pass
-                else:
-                    # the current value will be always on index 0 of current list above
-                    current.insert(0, datetime.datetime.strptime(row['date'], '%d/%m/%Y'))
-
-                # current[0] == datetime object for current row
-                if dt_end >= current[0] >= dt_start:
-                    tasks.append(row)
-
-            return tasks
+    if field == 'date':
+        tasks = Task.select().where(Task.date == field_value)
+        return tasks
+    if field == 'employee_name':
+        tasks = Task.select().where(Task.employee_name == field_value)
+        return tasks
+    if field == 'time_spent':
+        tasks = Task.select().where(Task.time_spent == field_value)
+        return tasks
 
 
 def find_tasks_by_word(str_w):
@@ -308,5 +244,3 @@ def find_tasks_by_pattern(ptrn):
                 if re.match(ptrn, row['title']) or re.match(ptrn, row['notes']):
                     tasks.append(row)
             return tasks
-
-

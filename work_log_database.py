@@ -1,6 +1,5 @@
-import os
-import csv
 import datetime
+from peewee import *
 
 import utils
 from task import Task
@@ -16,9 +15,14 @@ def add_entry_data():
     task_title = utils.enter_title()
     task_time_spent = utils.enter_time_spent()
     task_notes = utils.enter_notes()
+    employee_name = utils.enter_employee_name()
 
     # create instance
-    task = Task(task_date, task_title, task_time_spent, task_notes)
+    task = Task(date=task_date,
+                title=task_title,
+                time_spent=task_time_spent,
+                employee_name=employee_name,
+                notes=task_notes)
     # call to save it
     save_entry(task)
 
@@ -29,26 +33,30 @@ def save_entry(task):
     :param task:
     :return:
     """
-    try:
-        open('log.csv', 'a')
-    except IOError:
-        print("Couldn't open the file.")
+    if isinstance(task, Task):
+        Task.create(date=task.date,
+                    title=task.title,
+                    time_spent=task.time_spent,
+                    notes=task.notes,
+                    employee_name=task.employee_name,
+                    )
+        utils.clean_scr()
+        input("Task saved. Press enter to return to the menu")
+        utils.clean_scr()
+        # with open('log.csv', 'a') as csvfile:
+        #     fieldnames = vars(task).keys()
+        #     task_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        #
+        #     # only if file is empty write headers
+        #     if os.stat("log.csv").st_size == 0:
+        #         task_writer.writeheader()
+        #
+        #     task_writer.writerow(vars(task))
+        #     utils.clean_scr()
+        #     input("Task added. Press enter to return to the menu")
+        #     utils.clean_scr()
     else:
-        if isinstance(task, Task):
-            with open('log.csv', 'a') as csvfile:
-                fieldnames = vars(task).keys()
-                task_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-                # only if file is empty write headers
-                if os.stat("log.csv").st_size == 0:
-                    task_writer.writeheader()
-
-                task_writer.writerow(vars(task))
-                utils.clean_scr()
-                input("Task added. Press enter to return to the menu")
-                utils.clean_scr()
-        else:
-            print("Couldn't save. Data is corrupted.")
+        print("Couldn't save. Data is corrupted.")
 
 
 # SEARCHING FUNCTIONALITY
@@ -64,8 +72,7 @@ def print_tasks(tasks_list):
             print("Time Spent: " + task['time_spent'])
             print("Notes : " + task['notes'])
             if len(tasks_list) > 1:
-
-                print("-"*40)
+                print("-" * 40)
         input("\n" + "Press enter to return to search menu")
         utils.clean_scr()
 
@@ -167,5 +174,12 @@ def execute():
             print('Please select a letter option.')
 
 
+def initialize():
+    db = SqliteDatabase('logs.db')
+    db.connect()
+    db.create_tables([Task], safe=True)
+
+
 if __name__ == "__main__":
+    initialize()
     execute()

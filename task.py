@@ -1,10 +1,17 @@
+from peewee import *
 
-class Task:
-    def __init__(self, date, title, time_spent, notes=None):
-        self.date = date
-        self.title = title
-        self.time_spent = time_spent
-        self.notes = notes
+db = SqliteDatabase('logs.db')
+
+
+class Task(Model):
+    date = CharField(max_length=255)  # will have DD/MM/YYYY format
+    title = CharField(max_length=255)
+    time_spent = IntegerField
+    notes = TextField(null=True)
+    employee_name = CharField(max_length=255)
+
+    class Meta:
+        database = db
 
     def __str__(self):
         rep = "MyClass object\n"

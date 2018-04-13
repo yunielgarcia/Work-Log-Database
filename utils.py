@@ -82,12 +82,32 @@ def enter_title():
     return input_data['title']
 
 
+def enter_employee_name():
+    """
+    Receives and validate input data
+    :return: title (string)
+    """
+    valid_data = False
+    # used to keep track of the values and change them in other scopes
+    input_data = {'employee_name': ''}
+
+    while not valid_data:
+        input_data['employee_name'] = input("Employee's Name: ")
+        if re.match('[\w]+', input_data['employee_name']):
+            valid_data = True
+            clean_scr()
+
+    return input_data['employee_name']
+
+
 def enter_notes():
     """
     Receives and returns input data
     :return: notes (string)
     """
-    return input("Notes (Optional): ")
+    notes = input("Notes (Optional): ")
+    clean_scr()
+    return notes
 
 
 def enter_time_spent():

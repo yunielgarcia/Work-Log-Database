@@ -41,7 +41,7 @@ def print_options(order_list, option_list):
     return menu
 
 
-# INPUT FUNCTIONALITY
+# INPUT FUNCTIONALITY FOR NEW ENTRIES
 
 
 def enter_date():
@@ -135,36 +135,41 @@ def enter_time_spent():
 # SEARCHING FUNCTIONALITY
 
 
-def enter_searching_date():
+def enter_searching_option(field):
     """
     Receives and validate input data
     :return: date (string)
     """
     valid_data = False
     # used to keep track of the values and change them in other scopes
-    input_data = {'date': ''}
+    input_data = {field: ''}
 
     tasks_entries = Task.select()
     date_set = set()  # this way we guarantee no repeated elements.
     for task in tasks_entries:
-        date_set.add(task.date)
+        if field == 'date':
+            date_set.add(task.date)
+        elif field == 'employee_name':
+            date_set.add(task.employee_name)
     set_length = len(date_set)
 
     while not valid_data:
-        print("Select the date" + "\n")
+        print("Select from options below" + "\n")
         order_list = list(range(1, (set_length + 1)))
         option_list = list(date_set)
-        date_option_selected = input(print_options(order_list, option_list))
-        if re.match('\d+', date_option_selected) and int(date_option_selected) < (set_length + 1):
-            try:
-                datetime.datetime.strptime(input_data['date'], '%d/%m/%Y')
-            except ValueError:
-                clean_scr()
-                input("Enter a valid date. Press enter to try again.")
-            else:
-                valid_data = True
-                clean_scr()
-    return input_data['date']
+        field_option_selected = input(print_options(order_list, option_list))
+        if re.match('\d+', field_option_selected) and int(field_option_selected) < (set_length + 1):
+            # it's gotta be a number no greater than the options max number\
+            input_data[field] = option_list[(int(field_option_selected) - 1)]
+            valid_data = True
+            clean_scr()
+        elif field_option_selected in option_list:
+            # then the user enter the value for the entry i.e Name , date , etc
+            input_data[field] = field_option_selected
+            valid_data = True
+            clean_scr()
+
+    return find_tasks_by_field(field, input_data[field])
 
 
 def enter_searching_time():
@@ -187,7 +192,7 @@ def enter_searching_time():
     return input_data['time']
 
 
-# Accessing the csv file
+# Accessing the database
 
 
 def find_tasks_by_field(field, field_value):
@@ -200,47 +205,13 @@ def find_tasks_by_field(field, field_value):
     if field == 'date':
         tasks = Task.select().where(Task.date == field_value)
         return tasks
-    if field == 'employee_name':
+    elif field == 'employee_name':
         tasks = Task.select().where(Task.employee_name == field_value)
         return tasks
-    if field == 'time_spent':
+    elif field == 'time_spent':
         tasks = Task.select().where(Task.time_spent == field_value)
         return tasks
-
-
-def find_tasks_by_word(str_w):
-    tasks = []
-    try:
-        open('log.csv', 'r')
-    except IOError:
-        print("Couldn't open the file.")
-    else:
-        with open('log.csv', newline='') as csvfile:
-            task_reader = csv.DictReader(csvfile, delimiter=',')
-            rows = list(task_reader)
-            for row in rows:
-                # if re.match(str_w, row['title']) or re.match(str_w, row['notes']):
-                if row['title'].lower().__contains__(str_w.lower()) or row['notes'].lower().__contains__(str_w.lower()):
-                    tasks.append(row)
-            return tasks
-
-
-def find_tasks_by_pattern(ptrn):
-    """Looks for a match for the pattern entered in the title and the notes.
-    If any that task is selected for display.
-    :param ptrn to match on name or notes
-    :return list of task that passed the matching criteria
-    """
-    tasks = []
-    try:
-        open('log.csv', 'r')
-    except IOError:
-        print("Couldn't open the file.")
-    else:
-        with open('log.csv', newline='') as csvfile:
-            task_reader = csv.DictReader(csvfile, delimiter=',')
-            rows = list(task_reader)
-            for row in rows:
-                if re.match(ptrn, row['title']) or re.match(ptrn, row['notes']):
-                    tasks.append(row)
-            return tasks
+    elif field == 'search_str':
+        tasks = Task.select().where((Task.title.contains(field_value)) |
+                                    (Task.notes.contains(field_value)))
+        return tasks

@@ -56,6 +56,7 @@ def print_tasks(tasks):
     else:
         for task in tasks:
             print("Date: " + task.date)
+            print("Employee: " + task.employee_name)
             print("Title: " + task.title)
             print("Time Spent: {0.time_spent}".format(task))
             if task.notes:
@@ -67,8 +68,7 @@ def print_tasks(tasks):
 
 def get_by_exact_date():
     """Retrieve result tasks by exact date"""
-    desire_date = utils.enter_searching_date()
-    tasks = utils.find_tasks_by_field('date', desire_date)
+    tasks = utils.enter_searching_option('date')
     print_tasks(tasks)
 
 
@@ -79,9 +79,15 @@ def get_by_time():
     print_tasks(tasks)
 
 
+def get_by_employee():
+    """Retrieve result tasks by employee"""
+    tasks = utils.enter_searching_option('employee_name')
+    print_tasks(tasks)
+
+
 def get_by_string():
-    str_w = input("Enter word or part of if: ")
-    tasks = utils.find_tasks_by_word(str_w)
+    str_w = input("Enter key word or part of if: ")
+    tasks = utils.find_tasks_by_field('search_str', str_w)
     print_tasks(tasks)
 
 
@@ -106,12 +112,10 @@ def search_tasks():
             get_by_time()
         elif search_option == 'c':
             utils.clean_scr()
-            get_by_string()
+            get_by_employee()
         elif search_option == 'd':
             utils.clean_scr()
-            get_by_time()
-        elif search_option == 'e':
-            utils.clean_scr()
+            get_by_string()
         else:
             utils.clean_scr()
             print('Please select a letter option.')

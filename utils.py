@@ -1,7 +1,6 @@
 import os
 import re
 import datetime
-import csv
 from peewee import *
 
 from task import Task
@@ -43,6 +42,9 @@ def print_options(order_list, option_list):
 
 # INPUT FUNCTIONALITY FOR NEW ENTRIES
 
+def get_input(text):
+    return input(text)
+
 
 def enter_date():
     """
@@ -54,13 +56,13 @@ def enter_date():
     input_data = {'date': ''}
 
     while not valid_data:
-        input_data['date'] = input("Date of the task" + "\n" + "Please use DD/MM/YYYY format: ")
+        input_data['date'] = get_input("Date of the task" + "\n" + "Please use DD/MM/YYYY format: ")
         if re.match('\d{2}/\d{2}/\d{4}', input_data['date']):
             try:
                 datetime.datetime.strptime(input_data['date'], '%d/%m/%Y')
             except ValueError:
                 clean_scr()
-                input("Enter a valid date. Press enter to try again.")
+                get_input("Enter a valid date. Press enter to try again.")
             else:
                 valid_data = True
                 clean_scr()
@@ -78,7 +80,7 @@ def enter_title():
     input_data = {'title': ''}
 
     while not valid_data:
-        input_data['title'] = input("Title of the task: ")
+        input_data['title'] = get_input("Title of the task: ")
         if re.match('[\w]+', input_data['title']):
             valid_data = True
             clean_scr()
@@ -145,18 +147,18 @@ def enter_searching_option(field):
     input_data = {field: ''}
 
     tasks_entries = Task.select()
-    date_set = set()  # this way we guarantee no repeated elements.
+    data_set = set()  # this way we guarantee no repeated elements.
     for task in tasks_entries:
         if field == 'date':
-            date_set.add(task.date)
+            data_set.add(task.date)
         elif field == 'employee_name':
-            date_set.add(task.employee_name)
-    set_length = len(date_set)
+            data_set.add(task.employee_name)
+    set_length = len(data_set)
 
     while not valid_data:
         print("Select from options below" + "\n")
         order_list = list(range(1, (set_length + 1)))
-        option_list = list(date_set)
+        option_list = list(data_set)
         field_option_selected = input(print_options(order_list, option_list))
         if re.match('\d+', field_option_selected) and int(field_option_selected) < (set_length + 1):
             # it's gotta be a number no greater than the options max number\
@@ -182,7 +184,7 @@ def enter_searching_time():
     input_data = {'time': ''}
 
     while not valid_data:
-        input_data['time'] = input("Enter the time spent your are interested in (min)")
+        input_data['time'] = get_input("Enter the time spent your are interested in (min)")
         if re.match('\d+', input_data['time']):
             valid_data = True
             clean_scr()
@@ -215,3 +217,4 @@ def find_tasks_by_field(field, field_value):
         tasks = Task.select().where((Task.title.contains(field_value)) |
                                     (Task.notes.contains(field_value)))
         return tasks
+
